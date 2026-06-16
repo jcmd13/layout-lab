@@ -21,6 +21,9 @@
   .cell { position: relative; min-width: 0; overflow: hidden; }
   /* Each pane is its own container-query context so its contents react to pane width. */
   .pane { container-type: inline-size; height: 100%; overflow: auto; padding: 10px; color: var(--color-textPrimary, #fff); }
+  /* Hide scrollbars everywhere (scrolling still works via wheel/drag/touch). */
+  .pane, #stage-wrap, body { scrollbar-width: none; -ms-overflow-style: none; }
+  .pane::-webkit-scrollbar, #stage-wrap::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
   /* Column-divider handles overlay the grid (left set in JS); work for single- and multi-row grids. */
   .handle { position: absolute; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 5; }
   .handle::after { content: ''; position: absolute; left: 3px; top: 0; width: 2px; height: 100%; background: var(--color-shellBorder, rgba(255,255,255,0.14)); }
@@ -62,6 +65,9 @@
   .ll-input { flex: 1; font: 13px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary, #fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 10px; padding: 5px 10px; }
   .ll-pad { display: flex; flex-wrap: wrap; gap: 6px; }
   .ll-pad button { font: 12px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 9999px; padding: 4px 10px; cursor: pointer; text-align: left; }
+  /* Command pad (phone): squared corners, larger text, touch-friendly. */
+  .ll-cmdpad { display: flex; flex-direction: column; gap: 8px; }
+  .ll-cmdpad button { width: 100%; font-size: 17px; font-weight: 500; background: rgba(255,255,255,0.07); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.16)); border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left; }
   /* Centered reading spine + separated status strip + pinned suggestion dock + video pane. */
   .ll-center { max-width: 760px; margin: 0 auto; width: 100%; }
   .ll-status { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); border-bottom: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); }
