@@ -69,6 +69,10 @@
   .ll-video { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; background: #0c0e13; border: 1px dashed var(--color-shellBorder, rgba(255,255,255,0.22)); border-radius: 14px; min-height: 150px; color: var(--color-textMuted, #9aa0aa); font-size: 12px; }
   .ll-video .ll-face { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; font-size: 22px; }
   .ll-link { border-left: 2px solid var(--color-intentEmerald, #10b981); margin: 4px 0 8px 14px; padding-left: 10px; }
+  /* Transparent passthrough cutout: a see-through, aspect-locked hole the real call window
+     sits behind. The checkerboard hints "see-through"; the UI lives around it. */
+  .ll-cutout { aspect-ratio: 16 / 9; width: 100%; border: 2px dashed var(--color-accentBlue, #3b82f6); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--color-textMuted, #9aa0aa); font-size: 12px; text-align: center; background: repeating-conic-gradient(rgba(255,255,255,0.04) 0% 25%, transparent 0% 50%) 0 0 / 22px 22px; position: relative; }
+  .ll-cutout::after { content: '⤡'; position: absolute; right: 8px; bottom: 6px; color: var(--color-accentBlue, #3b82f6); font-size: 16px; }
 
   #export-out { white-space: pre; font: 12px ui-monospace, Menlo, monospace; background: #0d0f14; border: 1px solid #2a2d36; border-radius: 8px; padding: 10px; margin: 0 18px 18px; max-height: 220px; overflow: auto; display: none; color: #cfe; }
   #config-editor { margin: 0 18px 18px; display: none; }
