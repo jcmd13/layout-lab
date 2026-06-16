@@ -1,3 +1,7 @@
 node_modules/
 .DS_Store
 *.log
+
+# Private per-project configs (real tokens/content of private apps) — never publish.
+configs/*.local.config.js
+docs/*.local.png

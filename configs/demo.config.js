@@ -66,6 +66,13 @@
       };
       return `<div class="ll-health">${pill('Model', h.model)}${pill('Stream A', h.streamA)}${pill('Stream B', h.streamB)}</div>`;
     },
+    // Example app "chrome" renderers — show that multi-row grids can host real controls.
+    header(seed) {
+      return `<div class="ll-bar"><span class="ll-logo">●</span><span class="ll-title">${esc((seed.app || {}).title || 'Assistant')}</span><span class="ll-spacer"></span><button class="ll-ctl">Settings</button><button class="ll-ctl ll-stop">Stop</button></div>`;
+    },
+    footer() {
+      return `<div class="ll-bar"><input class="ll-input" placeholder="Type a message…" /><button class="ll-ctl">Ask</button></div>`;
+    },
   };
 
   const seed = {
@@ -110,6 +117,21 @@
       grid: { columns: '1.4fr 1fr', areas: '"conv sugg"' },
       panes: { conv: { render: 'messages' }, sugg: { render: 'suggestions' } },
       drawer: { render: 'termAppendix' },
+    },
+    {
+      id: 'with-chrome', name: 'Three-Frame + header/footer (multi-row)',
+      grid: {
+        columns: '1.3fr 1fr 0.8fr',
+        rows: 'auto 1fr auto',
+        areas: '"head head head" "conv sugg side" "foot foot foot"',
+      },
+      panes: {
+        head: { render: 'header' },
+        conv: { render: 'messages' },
+        sugg: { render: 'suggestions' },
+        side: { toggle: ['termAppendix', 'health'] },
+        foot: { render: 'footer' },
+      },
     },
   ];
 

@@ -13,6 +13,11 @@ visually.
 ![Three-frame layout with example content](docs/validation-three-frame.png)
 ![Compare mode — three variants side by side](docs/validation-compare.png)
 
+Multi-row grids let you mock real app **chrome** (header/toolbar/footer) around the
+content, with draggable column dividers:
+
+![Multi-row variant with header + footer](docs/demo-with-chrome.png)
+
 ## Why
 
 Every "draw → get code" tool that tries to emit production components disappoints
@@ -41,8 +46,21 @@ toggle compare mode, jot per-variant notes, and copy the exports (grid / CSS var
 
 Layout Lab is **one engine** (`layout-lab.html` + `layout-core.js`) driven by a
 per-project config. **To use it on a new project, write one `*.config.js` file —
-the engine never changes.** See [`configs/README.md`](configs/README.md) for the
-full contract. In short, a config supplies four things:
+the engine never changes.**
+
+**Where your config lives:** keep each project's config **and** its rendered outputs
+(PNGs / saved states) **inside that project** — e.g. a `ui-reference/` (or `ui-lab/`)
+folder — not in this repo. Point the tool at it by serving a common parent and using
+`?config=`:
+
+```sh
+cd ~/Projects && python3 -m http.server 8123
+# open: http://localhost:8123/layout-lab/layout-lab.html?config=/yourapp/ui-reference/yourapp.config.js
+```
+
+This repo stays generic (engine + template + demo only). See
+[`configs/README.md`](configs/README.md) for the full contract. In short, a config
+supplies four things:
 
 - `tokens` — flat groups (`color`, `space`, `radius`, …) → become `--group-key`
   CSS vars and the Tailwind/CSS exports.

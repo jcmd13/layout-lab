@@ -30,12 +30,18 @@ describe('demo.config.js', () => {
     assert.equal(r.ok, true);
   });
 
-  it('defines the three example variants', () => {
+  it('defines the example variants (incl. a multi-row chrome variant)', () => {
     // cfg is loaded in a separate VM realm, so its arrays carry that realm's
     // Array.prototype; deepStrictEqual checks prototypes. Normalize into this
     // realm with Array.from / spread before comparing.
     const ids = Array.from(cfg.variants, (v) => v.id).sort();
-    assert.deepEqual(ids, ['current', 'three-frame', 'two-frame'].sort());
+    assert.deepEqual(ids, ['current', 'three-frame', 'two-frame', 'with-chrome'].sort());
+  });
+
+  it('the multi-row chrome variant has rows + a multi-row areas string', () => {
+    const wc = cfg.variants.find((v) => v.id === 'with-chrome');
+    assert.ok(wc.grid.rows, 'with-chrome needs grid.rows');
+    assert.ok(wc.grid.areas.split('"').filter((s) => s.trim()).length >= 3, 'expected >= 3 area rows');
   });
 
   it('every renderer returns a non-empty HTML string for the seed', () => {

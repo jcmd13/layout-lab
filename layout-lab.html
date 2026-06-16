@@ -16,11 +16,12 @@
   #stage-wrap { padding: 18px; display: flex; gap: 18px; align-items: flex-start; overflow-x: auto; }
   .canvas { background: var(--color-shellBg, #181a20); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.1)); border-radius: var(--radius-panel, 22px); backdrop-filter: blur(var(--blur-shell, 14px)); overflow: hidden; flex: none; }
   .canvas-title { font-size: 11px; color: #9aa0aa; padding: 6px 12px; border-bottom: 1px solid var(--color-shellBorder, rgba(255,255,255,0.1)); }
-  .grid { display: grid; }
+  .grid { display: grid; position: relative; }
   .cell { position: relative; min-width: 0; overflow: hidden; }
   /* Each pane is its own container-query context so its contents react to pane width. */
   .pane { container-type: inline-size; height: 100%; overflow: auto; padding: 10px; color: var(--color-textPrimary, #fff); }
-  .handle { position: absolute; top: 0; right: -4px; width: 8px; height: 100%; cursor: col-resize; z-index: 5; }
+  /* Column-divider handles overlay the grid (left set in JS); work for single- and multi-row grids. */
+  .handle { position: absolute; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 5; }
   .handle::after { content: ''; position: absolute; left: 3px; top: 0; width: 2px; height: 100%; background: transparent; }
   .handle:hover::after, .handle.active::after { background: var(--color-accentBlue, #2563eb); }
   .drawer { border-top: 1px dashed var(--color-shellBorder, rgba(255,255,255,0.1)); }
@@ -47,6 +48,17 @@
   .ll-pill { font-size: 12px; border: 1px solid; border-radius: 9999px; padding: 2px 9px; align-self: flex-start; }
   /* Container query: when a suggestions pane gets narrow, tighten the cards. */
   @container (max-width: 240px) { .ll-card-b { font-size: 12px; } .ll-msg { max-width: 100%; } }
+
+  /* Generic app-"chrome" classes (header/footer bars, controls) for multi-row configs. */
+  .ll-bar { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+  .ll-logo { color: var(--color-accentBlue, #3b82f6); font-size: 14px; }
+  .ll-title { font-weight: 600; font-size: 13px; }
+  .ll-spacer { flex: 1; }
+  .ll-ctl { font: 12px inherit; background: rgba(255,255,255,0.08); color: var(--color-textPrimary, #fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 8px; padding: 3px 9px; cursor: pointer; }
+  .ll-ctl.ll-stop { color: var(--color-error, #f43f5e); border-color: var(--color-error, #f43f5e); }
+  .ll-input { flex: 1; font: 13px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary, #fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 10px; padding: 5px 10px; }
+  .ll-pad { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ll-pad button { font: 12px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 9999px; padding: 4px 10px; cursor: pointer; text-align: left; }
 
   #export-out { white-space: pre; font: 12px ui-monospace, Menlo, monospace; background: #0d0f14; border: 1px solid #2a2d36; border-radius: 8px; padding: 10px; margin: 0 18px 18px; max-height: 220px; overflow: auto; display: none; color: #cfe; }
   #config-editor { margin: 0 18px 18px; display: none; }
@@ -158,6 +170,13 @@
     return r ? r(CONFIG.seed, CONFIG.tokens) : `<em>missing renderer: ${pane.render}</em>`;
   }
 
+  function gapNum() { return parseInt(gapPx(), 10) || 0; }
+
+  function positionHandles(grid, sizes) {
+    const offsets = LayoutCore.columnHandleOffsets(sizes, gapNum());
+    grid.querySelectorAll('.handle').forEach((h, i) => { h.style.left = (offsets[i] - 4) + 'px'; });
+  }
+
   function buildCanvas(v, width, withHandles) {
     const sizes = sizesFor(v, width);
     const canvas = document.createElement('div');
@@ -174,11 +193,12 @@
     grid.className = 'grid';
     grid.style.gridTemplateColumns = LayoutCore.gridTemplateColumnsFromSizes(sizes);
     grid.style.gridTemplateAreas = v.grid.areas;
+    if (v.grid.rows) grid.style.gridTemplateRows = v.grid.rows;
     grid.style.gap = gapPx();
 
-    const areaNames = v.grid.areas.replace(/"/g, '').trim().split(/\s+/);
-    areaNames.forEach((areaName, idx) => {
-      const pane = v.panes[areaName];
+    // One cell per UNIQUE area name (areas may span multiple rows/cols via grid-template-areas).
+    LayoutCore.uniqueAreas(v.grid.areas).forEach((areaName) => {
+      const pane = (v.panes || {})[areaName];
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.style.gridArea = areaName;
@@ -186,14 +206,22 @@
       paneEl.className = 'pane';
       paneEl.innerHTML = pane ? renderPaneContent(pane, areaName) : '';
       cell.appendChild(paneEl);
-      if (withHandles && idx < areaNames.length - 1) {
-        const h = document.createElement('div');
-        h.className = 'handle';
-        h.dataset.handleIndex = String(idx);
-        cell.appendChild(h);
-      }
       grid.appendChild(cell);
     });
+
+    // Full-height column-divider handles overlaying the grid (one per internal column boundary).
+    if (withHandles) {
+      const n = colCount(v);
+      for (let i = 0; i < n - 1; i++) {
+        const h = document.createElement('div');
+        h.className = 'handle';
+        h.dataset.handleIndex = String(i);
+        grid.appendChild(h);
+      }
+      // Position after layout settles (needs the grid in the DOM for height).
+      requestAnimationFrame(() => positionHandles(grid, sizesFor(v, width)));
+    }
+
     canvas.appendChild(grid);
 
     if (v.drawer) {
@@ -221,6 +249,7 @@
       const next = LayoutCore.resizeColumns(active.startSizes, active.index, delta, MIN_PX);
       state.sizes[v.id] = next;
       grid.style.gridTemplateColumns = LayoutCore.gridTemplateColumnsFromSizes(next);
+      positionHandles(grid, next);
     });
     const end = (e) => {
       if (!active) return;

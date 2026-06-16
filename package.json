@@ -1,6 +1,6 @@
 {
   "name": "layout-lab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A cross-project, single-file tool to compare candidate UI layouts on real content + real design tokens before implementing them. Exports the layout contract (grid template + CSS vars + Tailwind theme), not finished components.",
   "license": "MIT",
