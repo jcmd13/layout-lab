@@ -230,3 +230,21 @@ describe('columnSizesFromTemplate (honors fr proportions, fits canvas)', () => {
     assert.deepEqual(LayoutCore.columnSizesFromTemplate('1fr', 780, 12, 120), [780]);
   });
 });
+
+describe('fitSizes (rescale columns to a new total, keep ratios)', () => {
+  it('returns sizes unchanged when they already fit', () => {
+    assert.deepEqual(LayoutCore.fitSizes([444, 340, 272], 1080, 12), [444, 340, 272]);
+  });
+
+  it('rescales proportionally to a smaller width and fits exactly', () => {
+    const out = LayoutCore.fitSizes([444, 340, 272], 800, 12);
+    assert.equal(out.reduce((a, b) => a + b, 0) + 24, 800);
+    // ratios preserved (largest still first, ordering kept)
+    assert.ok(out[0] > out[1] && out[1] > out[2]);
+  });
+
+  it('rescales up to a larger width and fits exactly', () => {
+    const out = LayoutCore.fitSizes([300, 300], 1000, 12);
+    assert.equal(out.reduce((a, b) => a + b, 0) + 12, 1000);
+  });
+});

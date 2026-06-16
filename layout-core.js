@@ -96,6 +96,18 @@
     return sizes;
   }
 
+  // Rescale column sizes to a new total width (keeping their ratios), so columns + gaps fit
+  // exactly. Used by fit-to-window so dragged proportions survive a window resize.
+  function fitSizes(sizes, totalWidth, gap) {
+    const target = totalWidth - gap * (sizes.length - 1);
+    const sum = sizes.reduce((a, b) => a + b, 0) || 1;
+    if (Math.abs(sum - target) <= 1) return sizes.slice();
+    const k = target / sum;
+    const out = sizes.map((s) => Math.round(s * k));
+    out[0] += target - out.reduce((a, b) => a + b, 0);
+    return out;
+  }
+
   // Center x of each internal column divider, accounting for the inter-column gap.
   // Used to place full-height drag handles over a (possibly multi-row) grid.
   function columnHandleOffsets(sizes, gap) {
@@ -165,7 +177,7 @@
   const LayoutCore = {
     tokensToCssVars, tokensToTailwind,
     gridTemplateColumnsFromSizes, gridTemplateExport,
-    uniqueAreas, columnHandleOffsets, defaultColumnSizes, columnSizesFromTemplate,
+    uniqueAreas, columnHandleOffsets, defaultColumnSizes, columnSizesFromTemplate, fitSizes,
     resizeColumns, encodeState, decodeState, validateConfig,
   };
 

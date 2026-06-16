@@ -10,20 +10,21 @@
   #toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; background: #15171d; border-bottom: 1px solid #2a2d36; position: sticky; top: 0; z-index: 10; }
   #toolbar select, #toolbar button { font: inherit; background: #21242d; color: #e6e6e6; border: 1px solid #3a3e49; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
   #toolbar button:hover { background: #2c303b; }
+  #toolbar button.on { background: var(--color-accentBlue, #2563eb); color: #fff; border-color: transparent; }
   #toolbar .sep { width: 1px; height: 22px; background: #2a2d36; margin: 0 4px; }
   #toolbar label { color: #9aa0aa; font-size: 12px; }
   #notes { width: 260px; background: #21242d; color: #e6e6e6; border: 1px solid #3a3e49; border-radius: 8px; padding: 5px 9px; font: inherit; }
   #stage-wrap { padding: 18px; display: flex; gap: 18px; align-items: flex-start; overflow-x: auto; }
-  .canvas { background: var(--color-shellBg, #181a20); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.1)); border-radius: var(--radius-panel, 22px); backdrop-filter: blur(var(--blur-shell, 14px)); overflow: hidden; flex: none; }
+  .canvas { background: var(--color-shellBg, #181a20); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.1)); border-radius: var(--radius-panel, 22px); backdrop-filter: blur(var(--blur-shell, 14px)); overflow: hidden; flex: none; display: flex; flex-direction: column; max-height: calc(100dvh - 96px); }
   .canvas-title { font-size: 11px; color: #9aa0aa; padding: 6px 12px; border-bottom: 1px solid var(--color-shellBorder, rgba(255,255,255,0.1)); }
-  .grid { display: grid; position: relative; }
+  .grid { display: grid; position: relative; flex: 1 1 auto; min-height: 0; }
   .cell { position: relative; min-width: 0; overflow: hidden; }
   /* Each pane is its own container-query context so its contents react to pane width. */
   .pane { container-type: inline-size; height: 100%; overflow: auto; padding: 10px; color: var(--color-textPrimary, #fff); }
   /* Column-divider handles overlay the grid (left set in JS); work for single- and multi-row grids. */
   .handle { position: absolute; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 5; }
-  .handle::after { content: ''; position: absolute; left: 3px; top: 0; width: 2px; height: 100%; background: transparent; }
-  .handle:hover::after, .handle.active::after { background: var(--color-accentBlue, #2563eb); }
+  .handle::after { content: ''; position: absolute; left: 3px; top: 0; width: 2px; height: 100%; background: var(--color-shellBorder, rgba(255,255,255,0.14)); }
+  .handle:hover::after, .handle.active::after { background: var(--color-accentBlue, #2563eb); width: 3px; left: 2.5px; }
   .drawer { border-top: 1px dashed var(--color-shellBorder, rgba(255,255,255,0.1)); }
   .pane-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
   .pane-toggle button { font: 11px inherit; background: #21242d; color: #cfd3da; border: 1px solid #3a3e49; border-radius: 6px; padding: 3px 7px; cursor: pointer; }
@@ -67,9 +68,14 @@
 
   /* Preview/device mode (?preview=1): full-bleed single variant at the device's real
      viewport width — open on a phone for a true-size view. */
+  body.preview { overflow: hidden; }
   body.preview #toolbar, body.preview #export-out, body.preview #config-editor { display: none; }
   body.preview #stage-wrap { padding: 0; overflow: visible; }
-  body.preview .canvas { border: none; border-radius: 0; }
+  /* Fix the canvas to the exact device height so there's no dead space AND no overflow:
+     the 1fr row (conversation/mirror) scrolls internally while header/command-pad stay
+     pinned (pad in the thumb zone). */
+  body.preview .canvas { border: none; border-radius: 0; height: 100dvh; max-height: 100dvh; }
+  body.preview .grid { min-height: 0; }
   body.preview .canvas-title { display: none; }
 </style>
 </head>
@@ -134,7 +140,9 @@
 
   // ---------- state ----------
   let CONFIG = null;
-  let state = { variant: null, width: 780, sizes: {}, toggles: {}, notes: {}, compare: false };
+  // fit:true => canvas fills the window (no horizontal scrollbar; default). autoscroll:true
+  // => conversation panes pin to the latest message.
+  let state = { variant: null, width: 1080, fit: true, autoscroll: true, sizes: {}, toggles: {}, notes: {}, compare: false };
 
   function loadState() {
     const fromHash = location.hash.startsWith('#s=') ? LayoutCore.decodeState(location.hash.slice(3)) : null;
@@ -157,12 +165,23 @@
   }
   function sizesFor(v, totalWidth) {
     const cur = state.sizes[v.id];
-    if (cur && cur.length === colCount(v)) return cur;
+    if (cur && cur.length === colCount(v)) {
+      // Rescale dragged/cached sizes to the current width (keeps ratios, fits the canvas).
+      return LayoutCore.fitSizes(cur, totalWidth, gapNum());
+    }
     const d = defaultSizes(v, totalWidth);
     state.sizes[v.id] = d;
     return d;
   }
   function gapPx() { return (CONFIG.tokens.space && CONFIG.tokens.space.md) || '12px'; }
+  // Effective canvas width: fill the window when fit is on (no horizontal scrollbar),
+  // otherwise the chosen fixed preset width.
+  function fitWidth() {
+    const wrap = document.getElementById('stage-wrap');
+    const avail = (wrap ? wrap.clientWidth : window.innerWidth) - (document.body.classList.contains('preview') ? 0 : 24);
+    return Math.max(360, avail);
+  }
+  function effectiveWidth() { return state.fit && !state.compare ? fitWidth() : state.width; }
 
   // ---------- rendering ----------
   function renderPaneContent(pane, areaName) {
@@ -246,7 +265,7 @@
       const h = e.target.closest('.handle');
       if (!h) return;
       h.classList.add('active');
-      active = { handle: h, index: Number(h.dataset.handleIndex), startX: e.clientX, startSizes: sizesFor(v, state.width).slice() };
+      active = { handle: h, index: Number(h.dataset.handleIndex), startX: e.clientX, startSizes: sizesFor(v, effectiveWidth()).slice() };
       grid.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
@@ -275,18 +294,28 @@
     const variants = state.compare
       ? CONFIG.variants
       : [variantById(state.variant) || CONFIG.variants[0]];
+    const width = state.compare ? state.width : effectiveWidth();
     variants.forEach((v) => {
-      const { canvas, grid } = buildCanvas(v, state.width, !state.compare);
+      const { canvas, grid } = buildCanvas(v, width, !state.compare);
       if (!state.compare) attachResize(grid, v);
       wrap.appendChild(canvas);
     });
-    // toggle buttons (event delegation)
+    // Reflect app-toggle state (e.g. autoscroll) on its buttons.
+    wrap.querySelectorAll('button[data-app-toggle]').forEach((b) => {
+      b.classList.toggle('on', !!state[b.dataset.appToggle]);
+    });
+    // Autoscroll: pin conversation panes to the latest message.
+    if (state.autoscroll !== false) {
+      wrap.querySelectorAll('[data-autoscroll]').forEach((el) => {
+        const pane = el.closest('.pane'); if (pane) pane.scrollTop = pane.scrollHeight;
+      });
+    }
+    // Delegated clicks (side toggle + app toggles); re-added each render.
     wrap.addEventListener('click', (e) => {
-      const b = e.target.closest('button[data-toggle-area]');
-      if (!b) return;
-      state.toggles[b.dataset.toggleArea] = b.dataset.toggleVal;
-      saveState();
-      render();
+      const tog = e.target.closest('button[data-toggle-area]');
+      if (tog) { state.toggles[tog.dataset.toggleArea] = tog.dataset.toggleVal; saveState(); render(); return; }
+      const app = e.target.closest('button[data-app-toggle]');
+      if (app) { state[app.dataset.appToggle] = !state[app.dataset.appToggle]; saveState(); render(); return; }
     }, { once: true });
   }
 
@@ -294,7 +323,7 @@
   function activeVariant() { return variantById(state.variant) || CONFIG.variants[0]; }
   function exportGrid() {
     const v = activeVariant();
-    return LayoutCore.gridTemplateExport({ areas: v.grid.areas, gap: gapPx(), sizes: sizesFor(v, state.width) });
+    return LayoutCore.gridTemplateExport({ areas: v.grid.areas, gap: gapPx(), sizes: sizesFor(v, effectiveWidth()) });
   }
   function copy(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
@@ -312,15 +341,25 @@
     sel.addEventListener('change', () => { state.variant = sel.value; saveState(); render(); });
 
     const presets = document.getElementById('width-presets');
-    presets.innerHTML = (CONFIG.widthPresets || []).map((p) => `<button data-w="${p.px}">${p.label}</button>`).join('') + `<button data-w="custom">+</button>`;
+    presets.innerHTML = `<button data-w="fit">Fit window</button>`
+      + (CONFIG.widthPresets || []).map((p) => `<button data-w="${p.px}">${p.label}</button>`).join('')
+      + `<button data-w="custom">+</button>`;
+    function markPresets() {
+      presets.querySelectorAll('button[data-w]').forEach((b) => {
+        const on = (b.dataset.w === 'fit' && state.fit) || (!state.fit && b.dataset.w === String(state.width));
+        b.classList.toggle('on', on);
+      });
+    }
     presets.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-w]'); if (!b) return;
-      if (b.dataset.w === 'custom') {
+      if (b.dataset.w === 'fit') { state.fit = true; }
+      else if (b.dataset.w === 'custom') {
         const v = prompt('Canvas width in px', String(state.width));
-        const n = Number(v); if (n > 0) state.width = n;
-      } else { state.width = Number(b.dataset.w); }
-      saveState(); render();
+        const n = Number(v); if (n > 0) { state.width = n; state.fit = false; }
+      } else { state.width = Number(b.dataset.w); state.fit = false; }
+      markPresets(); saveState(); render();
     });
+    markPresets();
 
     const cmp = document.getElementById('compare-toggle');
     cmp.addEventListener('click', () => { state.compare = !state.compare; cmp.textContent = 'Compare: ' + (state.compare ? 'on' : 'off'); saveState(); render(); });
@@ -364,16 +403,23 @@
       // Preview/device mode: ?preview=1[&variant=ID] — full-bleed single variant at the
       // device's real viewport width (open on a phone for a true-size view); no toolbar.
       const bootParams = new URLSearchParams(location.search);
-      if (bootParams.get('preview') === '1') {
+      const isPreview = bootParams.get('preview') === '1';
+      if (isPreview) {
         document.body.classList.add('preview');
         state.compare = false;
+        state.fit = false; // preview uses the device's exact viewport width
         const pv = bootParams.get('variant');
         if (pv && CONFIG.variants.some((v) => v.id === pv)) state.variant = pv;
         state.width = window.innerWidth;
-        window.addEventListener('resize', () => { state.width = window.innerWidth; render(); });
       }
       buildToolbar();
       render();
+      // Re-render on resize/orientation so fit-to-window and preview track the viewport.
+      let resizeT;
+      window.addEventListener('resize', () => {
+        if (isPreview) state.width = window.innerWidth;
+        if (isPreview || state.fit) { clearTimeout(resizeT); resizeT = setTimeout(render, 80); }
+      });
     } catch (e) {
       document.getElementById('stage-wrap').innerHTML = '<div class="err">Boot error: ' + (e && e.message) + '</div>';
       console.error(e);
