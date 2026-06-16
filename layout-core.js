@@ -49,6 +49,30 @@
     return lines.join('\n');
   }
 
+  // Ordered, de-duplicated area names from a (possibly multi-row) grid-template-areas
+  // string. '"pill pill" "a b"' -> ['pill','a','b']. The "." empty-cell token is dropped.
+  function uniqueAreas(areasStr) {
+    const seen = new Set();
+    const out = [];
+    for (const name of String(areasStr || '').replace(/"/g, ' ').trim().split(/\s+/)) {
+      if (!name || name === '.') continue;
+      if (!seen.has(name)) { seen.add(name); out.push(name); }
+    }
+    return out;
+  }
+
+  // Center x of each internal column divider, accounting for the inter-column gap.
+  // Used to place full-height drag handles over a (possibly multi-row) grid.
+  function columnHandleOffsets(sizes, gap) {
+    const out = [];
+    let x = 0;
+    for (let i = 0; i < sizes.length - 1; i++) {
+      x += sizes[i];
+      out.push(x + gap * i + gap / 2);
+    }
+    return out;
+  }
+
   function resizeColumns(sizes, handleIndex, deltaPx, minPx) {
     const out = sizes.slice();
     const i = handleIndex;
@@ -106,6 +130,7 @@
   const LayoutCore = {
     tokensToCssVars, tokensToTailwind,
     gridTemplateColumnsFromSizes, gridTemplateExport,
+    uniqueAreas, columnHandleOffsets,
     resizeColumns, encodeState, decodeState, validateConfig,
   };
 

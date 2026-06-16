@@ -160,3 +160,29 @@ describe('validateConfig', () => {
     assert.ok(r.errors.some((e) => /grid/.test(e)));
   });
 });
+
+describe('uniqueAreas (multi-row grids)', () => {
+  it('returns ordered unique area names from a single-row areas string', () => {
+    assert.deepEqual(LayoutCore.uniqueAreas('"conv sugg side"'), ['conv', 'sugg', 'side']);
+  });
+
+  it('dedupes spanning names across multiple rows, preserving first-seen order', () => {
+    const areas = '"pill pill pill" "conv sugg side" "ctl ctl ctl"';
+    assert.deepEqual(LayoutCore.uniqueAreas(areas), ['pill', 'conv', 'sugg', 'side', 'ctl']);
+  });
+
+  it('ignores the "." empty-cell token', () => {
+    assert.deepEqual(LayoutCore.uniqueAreas('"a . b"'), ['a', 'b']);
+  });
+});
+
+describe('columnHandleOffsets', () => {
+  it('returns N-1 gap-center x positions for column dividers', () => {
+    // sizes [300,200,100], gap 12 → boundary0 at 300+6=306, boundary1 at 300+200+12+6=518
+    assert.deepEqual(LayoutCore.columnHandleOffsets([300, 200, 100], 12), [306, 518]);
+  });
+
+  it('returns empty for a single column', () => {
+    assert.deepEqual(LayoutCore.columnHandleOffsets([500], 12), []);
+  });
+});
