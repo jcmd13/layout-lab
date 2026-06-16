@@ -60,6 +60,15 @@
   .ll-input { flex: 1; font: 13px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary, #fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 10px; padding: 5px 10px; }
   .ll-pad { display: flex; flex-wrap: wrap; gap: 6px; }
   .ll-pad button { font: 12px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 9999px; padding: 4px 10px; cursor: pointer; text-align: left; }
+  /* Centered reading spine + separated status strip + pinned suggestion dock + video pane. */
+  .ll-center { max-width: 760px; margin: 0 auto; width: 100%; }
+  .ll-status { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); border-bottom: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); }
+  .ll-status-label { color: var(--color-textMuted, #9aa0aa); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; margin-right: 2px; }
+  .ll-dock { border: 1px solid var(--color-intentEmerald, #10b981); border-radius: 12px; padding: 9px 12px; background: rgba(16,185,129,0.07); }
+  .ll-dock-h { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--color-intentEmerald, #10b981); margin-bottom: 3px; }
+  .ll-video { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; background: #0c0e13; border: 1px dashed var(--color-shellBorder, rgba(255,255,255,0.22)); border-radius: 14px; min-height: 150px; color: var(--color-textMuted, #9aa0aa); font-size: 12px; }
+  .ll-video .ll-face { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .ll-link { border-left: 2px solid var(--color-intentEmerald, #10b981); margin: 4px 0 8px 14px; padding-left: 10px; }
 
   #export-out { white-space: pre; font: 12px ui-monospace, Menlo, monospace; background: #0d0f14; border: 1px solid #2a2d36; border-radius: 8px; padding: 10px; margin: 0 18px 18px; max-height: 220px; overflow: auto; display: none; color: #cfe; }
   #config-editor { margin: 0 18px 18px; display: none; }
