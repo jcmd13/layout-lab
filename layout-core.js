@@ -61,6 +61,41 @@
     return out;
   }
 
+  // Even default column widths that FIT the canvas: column sums + inter-column gaps
+  // exactly equal totalWidth (so the grid never overflows and clips the right edge).
+  // Rounding remainder goes on the first column. Falls back to minPx when too narrow.
+  function defaultColumnSizes(n, totalWidth, gap, minPx) {
+    const gaps = gap * (n - 1);
+    const usable = Math.max(minPx * n, totalWidth - gaps);
+    const each = Math.floor(usable / n);
+    const sizes = Array.from({ length: n }, () => each);
+    sizes[0] += usable - each * n;
+    return sizes;
+  }
+
+  // Column widths honoring a grid-template-columns string's fr proportions (and any fixed
+  // px tracks), sized so columns + inter-column gaps fit totalWidth exactly. Rounding
+  // remainder lands on the first fr column. This is what initial/default sizing uses so a
+  // variant's declared proportions actually show.
+  function columnSizesFromTemplate(columns, totalWidth, gap, _minPx) {
+    const tokens = String(columns).trim().split(/\s+/);
+    const n = tokens.length;
+    const gaps = gap * (n - 1);
+    const parsed = tokens.map((t) => {
+      if (/fr$/.test(t)) return { fr: parseFloat(t) || 1 };
+      if (/px$/.test(t)) return { px: parseFloat(t) || 0 };
+      return { fr: 1 };
+    });
+    const fixed = parsed.reduce((s, p) => s + (p.px || 0), 0);
+    const frTotal = parsed.reduce((s, p) => s + (p.fr || 0), 0) || 1;
+    const usable = Math.max(0, totalWidth - gaps - fixed);
+    const sizes = parsed.map((p) => (p.px != null ? p.px : Math.floor((usable * p.fr) / frTotal)));
+    const remainder = (totalWidth - gaps) - sizes.reduce((a, b) => a + b, 0);
+    const firstFr = parsed.findIndex((p) => p.fr != null);
+    if (firstFr >= 0) sizes[firstFr] += remainder;
+    return sizes;
+  }
+
   // Center x of each internal column divider, accounting for the inter-column gap.
   // Used to place full-height drag handles over a (possibly multi-row) grid.
   function columnHandleOffsets(sizes, gap) {
@@ -130,7 +165,7 @@
   const LayoutCore = {
     tokensToCssVars, tokensToTailwind,
     gridTemplateColumnsFromSizes, gridTemplateExport,
-    uniqueAreas, columnHandleOffsets,
+    uniqueAreas, columnHandleOffsets, defaultColumnSizes, columnSizesFromTemplate,
     resizeColumns, encodeState, decodeState, validateConfig,
   };
 

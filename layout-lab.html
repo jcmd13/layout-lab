@@ -144,9 +144,9 @@
   function variantById(id) { return CONFIG.variants.find((v) => v.id === id); }
   function colCount(v) { return v.grid.columns.trim().split(/\s+/).length; }
   function defaultSizes(v, totalWidth) {
-    const n = colCount(v);
-    const w = Math.max(MIN_PX * n, totalWidth);
-    return Array.from({ length: n }, () => Math.round(w / n));
+    // Honor the variant's fr proportions, gap-aware so columns + gaps fit exactly
+    // (no right-edge clipping, and declared proportions actually render).
+    return LayoutCore.columnSizesFromTemplate(v.grid.columns, totalWidth, gapNum(), MIN_PX);
   }
   function sizesFor(v, totalWidth) {
     const cur = state.sizes[v.id];

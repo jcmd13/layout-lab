@@ -186,3 +186,47 @@ describe('columnHandleOffsets', () => {
     assert.deepEqual(LayoutCore.columnHandleOffsets([500], 12), []);
   });
 });
+
+describe('defaultColumnSizes (gap-aware, fits the canvas)', () => {
+  it('column sums + inter-column gaps equal the total width (no overflow)', () => {
+    const sizes = LayoutCore.defaultColumnSizes(3, 1080, 12, 120);
+    const sum = sizes.reduce((a, b) => a + b, 0);
+    assert.equal(sum + 12 * 2, 1080); // 2 gaps between 3 columns
+    assert.deepEqual(sizes, [352, 352, 352]);
+  });
+
+  it('puts any rounding remainder on the first column', () => {
+    const sizes = LayoutCore.defaultColumnSizes(3, 1000, 12, 120);
+    assert.equal(sizes.reduce((a, b) => a + b, 0) + 24, 1000);
+    assert.deepEqual(sizes, [326, 325, 325]);
+  });
+
+  it('respects minPx when the width is too small', () => {
+    assert.deepEqual(LayoutCore.defaultColumnSizes(3, 100, 12, 120), [120, 120, 120]);
+  });
+
+  it('single column spans the full width', () => {
+    assert.deepEqual(LayoutCore.defaultColumnSizes(1, 780, 12, 120), [780]);
+  });
+});
+
+describe('columnSizesFromTemplate (honors fr proportions, fits canvas)', () => {
+  it('distributes usable width by fr weights and fits exactly', () => {
+    const sizes = LayoutCore.columnSizesFromTemplate('1.3fr 1fr 0.8fr', 1080, 12, 120);
+    assert.equal(sizes.reduce((a, b) => a + b, 0) + 24, 1080);
+    assert.deepEqual(sizes, [444, 340, 272]); // ~1.3 : 1 : 0.8
+  });
+
+  it('different proportions produce different splits', () => {
+    const conv = LayoutCore.columnSizesFromTemplate('1.7fr 1fr 0.7fr', 1080, 12, 120);
+    const sugg = LayoutCore.columnSizesFromTemplate('1fr 1.4fr 0.7fr', 1080, 12, 120);
+    assert.notDeepEqual(conv, sugg);
+    assert.ok(conv[0] > conv[1] && conv[1] > conv[2]); // conversation widest
+    assert.ok(sugg[1] > sugg[0] && sugg[0] > sugg[2]); // suggestions widest
+    assert.equal(conv.reduce((a, b) => a + b, 0) + 24, 1080);
+  });
+
+  it('single fr column spans the full width', () => {
+    assert.deepEqual(LayoutCore.columnSizesFromTemplate('1fr', 780, 12, 120), [780]);
+  });
+});
