@@ -65,9 +65,11 @@
   .ll-input { flex: 1; font: 13px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary, #fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 10px; padding: 5px 10px; }
   .ll-pad { display: flex; flex-wrap: wrap; gap: 6px; }
   .ll-pad button { font: 12px inherit; background: rgba(255,255,255,0.06); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.14)); border-radius: 9999px; padding: 4px 10px; cursor: pointer; text-align: left; }
-  /* Command pad (phone): squared corners, larger text, touch-friendly. */
-  .ll-cmdpad { display: flex; flex-direction: column; gap: 8px; }
-  .ll-cmdpad button { width: 100%; font-size: 17px; font-weight: 500; background: rgba(255,255,255,0.07); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.16)); border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left; }
+  /* Command pad (phone): a grid of large SQUARE tiles — reliable thumb targets. */
+  .ll-cmdgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .ll-cmdgrid button { aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; border-radius: 16px; background: rgba(255,255,255,0.07); color: var(--color-textPrimary,#fff); border: 1px solid var(--color-shellBorder, rgba(255,255,255,0.16)); cursor: pointer; text-align: center; }
+  .ll-cmdgrid button .ico { font-size: 30px; line-height: 1; }
+  .ll-cmdgrid button.stop { color: var(--color-error, #f43f5e); border-color: var(--color-error, #f43f5e); }
   /* Centered reading spine + separated status strip + pinned suggestion dock + video pane. */
   .ll-center { max-width: 760px; margin: 0 auto; width: 100%; }
   .ll-status { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); border-bottom: 1px solid var(--color-shellBorder, rgba(255,255,255,0.12)); }
